@@ -1,14 +1,9 @@
-import { combineReducers, createStore, applyMiddleware } from 'redux';
+import { combineReducers, createStore, applyMiddleware, Middleware } from 'redux';
 import thunk from "redux-thunk";
-import { combineEpics, createEpicMiddleware } from 'redux-observable';
-import { connectRouter, routerMiddleware } from 'connected-react-router';
 import { createBrowserHistory } from 'history';
 
-import example from './example/index';
-
-const services = {
-    example: example.services
-};
+import { configureStore } from '@reduxjs/toolkit';
+import example from './slices/example';
 
 const actions = {
     example: example.actions
@@ -16,24 +11,31 @@ const actions = {
 
 const history = createBrowserHistory<TLocationState>();
 
-const reducers = combineReducers({
-    example: example.reducers,
-    router: connectRouter(history)
+const reducer = combineReducers({
+    example: example.reducer
 });
 
-/*const epics =
-    combineEpics(
-    );*/
 
-export const epicMiddleware = createEpicMiddleware<TRootAction, TRootAction, TRootState, TServices>({ dependencies: services });
+const middleware = () => {
+    const middleware: Middleware[] = [thunk];
 
-const middlewares = [thunk, epicMiddleware, routerMiddleware(history)];
+    return middleware;
+}
 
-const store = createStore(reducers, applyMiddleware(...middlewares));
+const store = configureStore({
+    reducer,
+    middleware
+})
 
 //epicMiddleware.run(epics);
 
 const initialState = store.getState();
 
 export default store;
-export { actions, reducers/*, epics*/, services, history, initialState };
+
+// Infer the `RootState` and `AppDispatch` types from the store itself
+export type RootState = ReturnType<typeof store.getState>
+// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
+export type AppDispatch = typeof store.dispatch;
+
+export { actions, reducer, history, initialState };
